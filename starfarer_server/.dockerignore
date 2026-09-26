@@ -1,0 +1,13 @@
+.git
+bin
+dist
+tmp
+*.log
+*.out
+node_modules
+.env
+.idea
+.vscode
+.DS_Store
+# Go stuff
+coverage.out

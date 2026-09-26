@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package starfarer.protocol.v1;
+
+option csharp_namespace = "Starfarer.Protocol.V1";
+option go_package = "starfarer/internal/protocol/v1;protocolv1";
+
+message Hello {
+  string client_version = 1;
+}
+
+message Welcome {
+  uint64 player_id = 1;
+}
+
+message Ping {
+  uint64 nonce = 1;
+}
+
+message Pong {
+  uint64 nonce = 1;
+}
+
+// Diagnostic state only; this is not a game simulation.
+message WorldSnapshot {
+  uint64 tick = 1;
+  float test_position = 2;
+}
+
+message ClientEvents {
+  uint32 protocol_version = 1;
+
+  oneof event {
+    Hello hello = 10;
+    Ping ping = 11;
+  }
+}
+
+message ServerEvents {
+  uint32 protocol_version = 1;
+
+  oneof event {
+    Welcome welcome = 10;
+    Pong pong = 11;
+    WorldSnapshot snapshot = 12;
+  }
+}

@@ -1,0 +1,4 @@
+.bin/
+.env
+
+internal/protocol/v1

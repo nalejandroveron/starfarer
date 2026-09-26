@@ -1,0 +1,12 @@
+version: v2
+
+clean: false
+
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: .
+    opt:
+      - module=starfarer
+
+  - remote: buf.build/protocolbuffers/csharp
+    out: ../starfarer/Protocol/Generated
