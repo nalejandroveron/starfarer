@@ -13,18 +13,25 @@ message Welcome {
   uint64 player_id = 1;
 }
 
-message Ping {
-  uint64 nonce = 1;
+message PlayerInput {
+  uint64 sequence = 1;
+  float move_x = 2;
+  float move_z = 3;
 }
 
-message Pong {
-  uint64 nonce = 1;
+message PlayerState {
+  uint64 player_id = 1;
+
+  float position_x = 2;
+  float position_z = 3;
+
+  uint64 last_processed_input = 4;
 }
 
 // Diagnostic state only; this is not a game simulation.
 message WorldSnapshot {
   uint64 tick = 1;
-  float test_position = 2;
+  repeated PlayerState players = 2;
 }
 
 message ClientEvents {
@@ -32,7 +39,7 @@ message ClientEvents {
 
   oneof event {
     Hello hello = 10;
-    Ping ping = 11;
+    PlayerInput player_input = 11;
   }
 }
 
@@ -41,7 +48,6 @@ message ServerEvents {
 
   oneof event {
     Welcome welcome = 10;
-    Pong pong = 11;
-    WorldSnapshot snapshot = 12;
+    WorldSnapshot snapshot = 11;
   }
 }

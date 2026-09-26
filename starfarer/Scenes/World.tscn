@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://da654ehsg73uu"]
+
+[ext_resource type="Script" uid="uid://b28duhxveikpo" path="res://Scenes/World.cs" id="1_j0p05"]
+[ext_resource type="PackedScene" path="res://Diagnostics/TransportProbe/TransportProbe.tscn" id="2_5nsto"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_3ec2n"]
+size = Vector2(100, 100)
+
+[node name="World" type="Node3D" unique_id=1051221932]
+script = ExtResource("1_j0p05")
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1555421424]
+mesh = SubResource("PlaneMesh_3ec2n")
+
+[node name="Players" type="Node3D" parent="." unique_id=770882421]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=151086942]
+transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 16, 16)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=944634593]
+transform = Transform3D(0.8660254, 0.43301272, -0.24999999, 0, 0.49999997, 0.86602545, 0.5, -0.75, 0.43301266, 0, 0, 0)
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1512628130]
+
+[node name="TransportProbe" parent="HUD" unique_id=2141788361 instance=ExtResource("2_5nsto")]
