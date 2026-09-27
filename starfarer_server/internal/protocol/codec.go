@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	pb "starfarer/internal/protocol/v1"
+	"starfarer/netcode"
 
 	"google.golang.org/protobuf/proto"
 )
 
-const Version uint32 = 1
-const MaxDatagramSize = 1200
+const Version uint32 = 2
+const MaxDatagramSize = netcode.MaxDatagramSize
 
 // DecodeClientEvents validates the envelope before dispatching it.
 func DecodeClientEvents(data []byte) (*pb.ClientEvents, error) {

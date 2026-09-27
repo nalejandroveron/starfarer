@@ -1,5 +1,6 @@
 using Godot;
 using Starfarer.Protocol.V1;
+using Starfarer.Netcode;
 
 public partial class World : Node3D
 {
@@ -8,6 +9,8 @@ public partial class World : Node3D
     private TransportProbe _client = null!;
 
     private readonly Dictionary<ulong, Node3D> _players = new();
+    private readonly Dictionary<ulong, SnapshotBuffer<Vector3>>
+        _remoteSamples = new();
 
     public override void _Ready()
     {
@@ -36,14 +39,28 @@ public partial class World : Node3D
                 _players.Add(state.PlayerId, node);
             }
 
-            node.Position = new Vector3(
+            var position = new Vector3(
                 state.PositionX,
                 0,
                 state.PositionZ
             );
+            if (state.PlayerId == _client.LocalPlayerId)
+            {
+                node.Position = _client.LocalVisualPosition;
+            }
+            else
+            {
+                if (!_remoteSamples.TryGetValue(state.PlayerId, out var buffer))
+                {
+                    buffer = new SnapshotBuffer<Vector3>();
+                    _remoteSamples.Add(state.PlayerId, buffer);
+                    node.Position = position;
+                }
+                buffer.Add(snapshot.ServerTime, position);
+            }
         }
 
-        // Primero reunimos los IDs; después modificamos el diccionario.
+        // A complete AOI baseline describes visibility, not entity destruction.
         var removed = new List<ulong>();
 
         foreach (var id in _players.Keys)
@@ -56,6 +73,7 @@ public partial class World : Node3D
         {
             _players[id].QueueFree();
             _players.Remove(id);
+            _remoteSamples.Remove(id);
         }
     }
 
@@ -65,6 +83,24 @@ public partial class World : Node3D
             node.QueueFree();
 
         _players.Clear();
+        _remoteSamples.Clear();
+    }
+
+    public override void _Process(double delta)
+    {
+        double renderTime = _client.RenderTime;
+        if (_players.TryGetValue(_client.LocalPlayerId, out var local))
+            local.Position = _client.LocalVisualPosition;
+
+        foreach (var entry in _remoteSamples)
+        {
+            if (!_players.TryGetValue(entry.Key, out var node))
+                continue;
+
+            if (entry.Value.TrySample(renderTime,
+                (from, to, weight) => from.Lerp(to, weight), out var position))
+                node.Position = position;
+        }
     }
 
     public override void _ExitTree()

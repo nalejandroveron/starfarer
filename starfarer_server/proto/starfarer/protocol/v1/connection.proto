@@ -7,16 +7,36 @@ option go_package = "starfarer/internal/protocol/v1;protocolv1";
 
 message Hello {
   string client_version = 1;
+  bytes connection_id = 2;
+  bytes resume_token = 3;
+  uint64 attempt = 4;
+  double client_time = 5;
 }
 
 message Welcome {
   uint64 player_id = 1;
+  uint32 simulation_hz = 2;
+  uint32 snapshot_hz = 3;
+  uint32 input_batch_limit = 4;
+  uint32 input_history_limit = 5;
+  bytes connection_id = 6;
+  bytes resume_token = 7;
+  uint64 session_epoch = 8;
+  double server_time = 9;
+  uint32 input_hz = 10;
+  PlayerState player = 11;
+  uint64 action_ack = 12;
+  double client_time = 13;
 }
 
 message PlayerInput {
   uint64 sequence = 1;
   float move_x = 2;
   float move_z = 3;
+}
+
+message PlayerInputBatch {
+  repeated PlayerInput inputs = 1;
 }
 
 message PlayerState {
@@ -26,28 +46,54 @@ message PlayerState {
   float position_z = 3;
 
   uint64 last_processed_input = 4;
+  uint64 resolved_tick = 5;
 }
 
-// Diagnostic state only; this is not a game simulation.
+// Complete AOI baseline, applied atomically after every part arrives.
 message WorldSnapshot {
   uint64 tick = 1;
   repeated PlayerState players = 2;
+  uint32 part_index = 3;
+  uint32 part_count = 4;
+  double server_time = 5;
+  uint32 snapshot_hz = 6;
+  uint64 timing_revision = 7;
+  uint32 simulation_hz = 8;
 }
+
+message ClockProbe { double client_time = 1; }
+message ClockReply { double client_time = 1; double server_time = 2; }
+
+// Reliable ordered bytes are decoded by the game adapter, never by netcode.
+message ReliableFrame { uint64 sequence = 1; bytes payload = 2; }
+message ReliableAck { uint64 sequence = 1; }
+message DiagnosticAction { string echo = 1; }
+message DiagnosticResult { string echo = 1; }
 
 message ClientEvents {
   uint32 protocol_version = 1;
+  uint64 session_epoch = 2;
+  bytes resume_token = 3;
+  uint64 snapshot_ack = 4;
 
   oneof event {
     Hello hello = 10;
-    PlayerInput player_input = 11;
+    PlayerInputBatch player_inputs = 11;
+    ClockProbe clock_probe = 12;
+    ReliableFrame reliable = 13;
+    ReliableAck reliable_ack = 14;
   }
 }
 
 message ServerEvents {
   uint32 protocol_version = 1;
+  uint64 session_epoch = 2;
 
   oneof event {
     Welcome welcome = 10;
     WorldSnapshot snapshot = 11;
+    ClockReply clock_reply = 12;
+    ReliableFrame reliable = 13;
+    ReliableAck reliable_ack = 14;
   }
 }

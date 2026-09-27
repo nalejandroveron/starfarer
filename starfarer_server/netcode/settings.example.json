@@ -1,0 +1,4 @@
+{
+  "simulation_hz": 30,
+  "snapshot_hz": 10
+}

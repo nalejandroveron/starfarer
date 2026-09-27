@@ -2,77 +2,38 @@ package world
 
 import (
 	"math"
-	"time"
+	"starfarer/netcode"
 )
 
+const InputHz = 60
+const PlayerSpeed float32 = 5
+
+type movementInput struct{ X, Z float32 }
 type Player struct {
-	ID uint64
-
-	// Posición autoritativa calculada por Go.
-	X float32
-	Z float32
-
-	// Última dirección recibida del cliente.
-	MoveX float32
-	MoveZ float32
-
-	LastReceivedInput  uint64
-	LastProcessedInput uint64
-	LastInputAt        time.Time
+	ID       uint64
+	X, Z     float32
+	Timeline *netcode.Timeline[movementInput]
 }
 
-func NewPlayer(id uint64) *Player {
-	return &Player{
-		ID: id,
-	}
+func NewPlayer(id uint64) *Player { return NewPlayerAt(id, 0) }
+func NewPlayerAt(id, tick uint64) *Player {
+	return &Player{ID: id, Timeline: netcode.NewTimeline[movementInput](tick, 256, 6)}
 }
-
-func (p *Player) ApplyInput(
-	sequence uint64,
-	moveX, moveZ float32,
-	now time.Time,
-) bool {
-	if sequence <= p.LastReceivedInput {
+func (p *Player) ApplyInput(tick uint64, x, z float32) bool {
+	dx, dz := float64(x), float64(z)
+	if math.IsNaN(dx) || math.IsNaN(dz) || math.IsInf(dx, 0) || math.IsInf(dz, 0) {
 		return false
 	}
-
-	x, z := float64(moveX), float64(moveZ)
-
-	if math.IsNaN(x) || math.IsNaN(z) ||
-		math.IsInf(x, 0) || math.IsInf(z, 0) {
-		return false
-	}
-
-	// Limita la magnitud a 1, conservando la dirección.
-	length := math.Hypot(x, z)
+	length := math.Hypot(dx, dz)
 	if length > 1 {
-		x /= length
-		z /= length
+		x = float32(dx / length)
+		z = float32(dz / length)
 	}
-
-	p.MoveX = float32(x)
-	p.MoveZ = float32(z)
-	p.LastReceivedInput = sequence
-	p.LastInputAt = now
-
-	return true
+	return p.Timeline.Add(tick, movementInput{x, z})
 }
-
-const (
-	playerSpeed  float32 = 5 // Unidades por segundo.
-	inputTimeout         = 250 * time.Millisecond
-)
-
-func (p *Player) Step(dt float32, now time.Time) {
-	if p.LastInputAt.IsZero() ||
-		now.Sub(p.LastInputAt) > inputTimeout {
-		p.MoveX = 0
-		p.MoveZ = 0
-		return
-	}
-
-	p.X += p.MoveX * playerSpeed * dt
-	p.Z += p.MoveZ * playerSpeed * dt
-
-	p.LastProcessedInput = p.LastReceivedInput
+func (p *Player) Advance(tick uint64) {
+	p.Timeline.Advance(tick, 120, func(input movementInput) {
+		p.X += input.X * PlayerSpeed / InputHz
+		p.Z += input.Z * PlayerSpeed / InputHz
+	})
 }

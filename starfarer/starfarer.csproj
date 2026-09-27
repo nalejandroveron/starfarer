@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
+    <Compile Remove="netcode/tests/**/*.cs;netcode/obj/**/*.cs;netcode/bin/**/*.cs" />
   </ItemGroup>
 </Project>
